@@ -25,19 +25,27 @@ namespace Openhack_Challenge3
 
         [FunctionName("CreateRating")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation("CreateRating processed a request.");
 
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var feedback = JsonConvert.DeserializeObject<Feedback>(requestBody);
+            if (req.Method.ToLower().Equals("get")) return new NotFoundObjectResult("Get method is not supported");
 
-            if (await IsValidProductId(feedback.UserId) && await IsValidUserId(feedback.UserId))
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            try
             {
-                return new OkObjectResult(JsonConvert.SerializeObject(feedback));
+                var feedback = JsonConvert.DeserializeObject<Feedback>(requestBody);
+                if (await IsValidProductId(feedback.UserId) && await IsValidUserId(feedback.UserId))
+                {
+                    return new OkObjectResult(JsonConvert.SerializeObject(feedback));
+                }
+                return new BadRequestObjectResult("Invalid user id or product id.  Please resubmit the request with right product id and user id");
             }
-            return new BadRequestObjectResult("Invalid user id or product id.  Please resubmit the request with right product id and user id");
+            catch (Exception ex)
+            {
+                return new StatusCodeResult(500);
+            }
         }
 
         private async Task<bool> IsValidProductId(string productId)
