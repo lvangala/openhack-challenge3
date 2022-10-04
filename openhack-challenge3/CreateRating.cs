@@ -36,7 +36,7 @@ namespace Openhack_Challenge3
             try
             {
                 var feedback = JsonConvert.DeserializeObject<Feedback>(requestBody);
-                if (await IsValidProductId(feedback.UserId) && await IsValidUserId(feedback.UserId))
+                if (await IsValidProductId(feedback.ProductId, log) && await IsValidUserId(feedback.UserId, log))
                 {
                     return new OkObjectResult(JsonConvert.SerializeObject(feedback));
                 }
@@ -48,21 +48,23 @@ namespace Openhack_Challenge3
             }
         }
 
-        private async Task<bool> IsValidProductId(string productId)
+        private async Task<bool> IsValidProductId(string productId, ILogger log)
         {
             var httpClient = _httpClientFactory.CreateClient();
             var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetProduct?productId={productId}";
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"Product status code {httpResponseMessage.IsSuccessStatusCode}");
             return httpResponseMessage.IsSuccessStatusCode;
         }
 
-        private async Task<bool> IsValidUserId(string userId)
+        private async Task<bool> IsValidUserId(string userId, ILogger log)
         {
             var httpClient = _httpClientFactory.CreateClient();
             var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetUser?userId={userId}";
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"User status code {httpResponseMessage.IsSuccessStatusCode}");
             return httpResponseMessage.IsSuccessStatusCode;
         }
     }
