@@ -26,6 +26,7 @@ namespace Openhack_Challenge3
         [FunctionName("CreateRating")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDBConnectionString")] IAsyncCollector<Feedback> documentStore,
             ILogger log)
         {
             log.LogInformation("CreateRating processed a request.");
@@ -36,33 +37,36 @@ namespace Openhack_Challenge3
             try
             {
                 var feedback = JsonConvert.DeserializeObject<Feedback>(requestBody);
-                if (await IsValidProductId(feedback.UserId) && await IsValidUserId(feedback.UserId))
+                if (await IsValidProductId(feedback.ProductId, log) && await IsValidUserId(feedback.UserId, log))
                 {
-                    return new OkObjectResult(JsonConvert.SerializeObject(feedback));
+                    await documentStore.AddAsync(feedback);
+                    return new OkObjectResult(JsonConvert.SerializeObject(feedback, Formatting.Indented));
                 }
                 return new BadRequestObjectResult("Invalid user id or product id.  Please resubmit the request with right product id and user id");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return new StatusCodeResult(500);
             }
         }
 
-        private async Task<bool> IsValidProductId(string productId)
+        private async Task<bool> IsValidProductId(string productId, ILogger log)
         {
             var httpClient = _httpClientFactory.CreateClient();
             var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetProduct?productId={productId}";
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"Product status code {httpResponseMessage.IsSuccessStatusCode}");
             return httpResponseMessage.IsSuccessStatusCode;
         }
 
-        private async Task<bool> IsValidUserId(string userId)
+        private async Task<bool> IsValidUserId(string userId, ILogger log)
         {
             var httpClient = _httpClientFactory.CreateClient();
             var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetUser?userId={userId}";
             using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"User status code {httpResponseMessage.IsSuccessStatusCode}");
             return httpResponseMessage.IsSuccessStatusCode;
         }
     }
