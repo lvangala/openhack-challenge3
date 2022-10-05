@@ -11,11 +11,13 @@ namespace Openhack_Challenge3.Models
         public string LocationName { get; set; }
         public int Rating { get; set; }
         public string UserNotes { get; set; }
+        public string Message { get; set; }
 
         public Feedback()
         {
             Id = Guid.NewGuid().ToString();
             Timestamp = DateTime.UtcNow;
+            Message = "Staging testing"
         }
     }
 }
