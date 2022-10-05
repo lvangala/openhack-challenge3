@@ -7,29 +7,67 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Openhack_Challenge3.Models;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
 
-namespace openhack_challenge3
+namespace Openhack_Challenge3
 {
-    public static class CreateRating
+    public class CreateRating
     {
+        private IHttpClientFactory _httpClientFactory;
+
+        public CreateRating(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
+
         [FunctionName("CreateRating")]
-        public static async Task<IActionResult> Run(
+        public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDbConnectionString")] IAsyncCollector<Feedback> documentStore,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation("CreateRating processed a request.");
 
-            string name = req.Query["name"];
+            if (req.Method.ToLower().Equals("get")) return new NotFoundObjectResult("Get method is not supported");
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            try
+            {
+                var feedback = JsonConvert.DeserializeObject<Feedback>(requestBody);
+                if (await IsValidProductId(feedback.ProductId, log) && await IsValidUserId(feedback.UserId, log))
+                {
+                    await documentStore.AddAsync(feedback);
+                    return new OkObjectResult(JsonConvert.SerializeObject(feedback, Formatting.Indented));
+                }
+                return new BadRequestObjectResult("Invalid user id or product id.  Please resubmit the request with right product id and user id");
+            }
+            catch (Exception)
+            {
+                return new StatusCodeResult(500);
+            }
+        }
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+        private async Task<bool> IsValidProductId(string productId, ILogger log)
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetProduct?productId={productId}";
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"Product status code {httpResponseMessage.IsSuccessStatusCode}");
+            return httpResponseMessage.IsSuccessStatusCode;
+        }
 
-            return new OkObjectResult(responseMessage);
+        private async Task<bool> IsValidUserId(string userId, ILogger log)
+        {
+            var httpClient = _httpClientFactory.CreateClient();
+            var requestUrl = $"https://serverlessohapi.azurewebsites.net/api/GetUser?userId={userId}";
+            using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            using var httpResponseMessage = await httpClient.SendAsync(httpRequestMessage);
+            log.LogInformation($"User status code {httpResponseMessage.IsSuccessStatusCode}");
+            return httpResponseMessage.IsSuccessStatusCode;
         }
     }
 }
