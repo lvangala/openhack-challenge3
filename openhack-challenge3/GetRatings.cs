@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Openhack_Challenge3.Models;
+using System.Collections.Generic;
 
 namespace openhack_challenge3
 {
