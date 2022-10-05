@@ -17,7 +17,7 @@ namespace openhack_challenge3
         [FunctionName("GetRatings")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetRatings/{userId}")] HttpRequest req,
-            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDbConnectionString", PartitionKey ="{userId}")] IEnumerable<Feedback> feedbacks,
+            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDbConnectionString", PartitionKey ="{userId}", SqlQuery = "SELECT * FROM c where c.UserId={userId}")] IEnumerable<Feedback> feedbacks,
             ILogger log)
         {
             log.LogInformation("GetRatings processed a request.");
