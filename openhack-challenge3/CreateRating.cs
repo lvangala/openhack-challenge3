@@ -26,7 +26,7 @@ namespace Openhack_Challenge3
         [FunctionName("CreateRating")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDBConnectionString")] IAsyncCollector<Feedback> documentStore,
+            [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDbConnectionString")] IAsyncCollector<Feedback> documentStore,
             ILogger log)
         {
             log.LogInformation("CreateRating processed a request.");
