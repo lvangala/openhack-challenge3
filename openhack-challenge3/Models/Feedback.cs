@@ -17,7 +17,7 @@ namespace Openhack_Challenge3.Models
         {
             Id = Guid.NewGuid().ToString();
             Timestamp = DateTime.UtcNow;
-            Message = "Staging testing"
+            Message = "Staging testing";
         }
     }
 }
