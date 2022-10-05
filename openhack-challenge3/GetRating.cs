@@ -12,10 +12,10 @@ using Microsoft.Azure.Documents.Client;
 
 namespace openhack_challenge3
 {
-    public static class GetRating
+    public class GetRating
     {
         [FunctionName("GetRating")]
-        public static async Task<IActionResult> Run(
+        public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = "GetRating/{userId}/{ratingId}")] HttpRequest req,
             [CosmosDB(databaseName: "openhack-challenge3", collectionName: "ratings", ConnectionStringSetting = "CosmosDbConnectionString", Id = "{ratingId}", PartitionKey = "{userId}")] Feedback feedback,
             ILogger log)
